@@ -184,6 +184,8 @@ export class Root extends React.Component<RootProps, RootState> {
       // Colours are stored [0-1] by Color class but [0-255] in shader attributes
       colours.setXYZ(this.state.selectedPoint.index, 255 * newColour.r, 255 * newColour.g, 255 * newColour.b);
       colours.needsUpdate = true;
+
+      this.viewer.setToUpdate();
     }
   }
 

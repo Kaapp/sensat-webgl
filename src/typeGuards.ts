@@ -10,15 +10,6 @@ export const isPoints = (maybe: Object3D): maybe is Points => {
 };
 
 /**
- * Type guard to check if an Object3D is actually a Line instance.
- * @param maybe The potential Line object
- * @returns Whether or not the supplied value was a Line instance.
- */
- export const isLine = (maybe: Object3D): maybe is Line => {
-    return maybe !== null && (maybe as Line).isLine;
-};
-
-/**
  * Type guard to discriminate between buffer attribute types.
  * @param maybe The potential buffer attribute
  * @returns Whether or not the supplied value was a buffer attribute.

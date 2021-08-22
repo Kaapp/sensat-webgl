@@ -53,6 +53,7 @@ Serves the development build on `http://localhost:8080`, which will rebuild on f
 ### Design choices
 Raycaster over GPU picking - While GPU picking has notable overhead, as the amount of data grows it becomes more efficient. In this example, the models being loaded are sufficiently small that raycasting over that many points is acceptable. 
 React - just a very simple way to get a quick UI working to allow me to implement the changing of selected colours
+Improve app performance - We don't need to re-render if the camera hasn't changed so we conditionally call render when we know something has changed to avoid wasting idle resources.
 
 ### Potential improvements
 GPU Picking - by chunking the points in an octree and using the GPU picked colour to determine which chunk to select as a lookup rather than needing to search several areas of the octree that a ray passes through until an intersection is found. However, writing custom shaders to do this seemed a little out of scope for this project given the requested time to be spent.

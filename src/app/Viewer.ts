@@ -4,7 +4,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import Stats from 'stats.js';
 import { convertDOMCoordinatesToNDC } from '../utils';
 import { Root } from '../ui/Root';
-import { isLine } from '../typeGuards';
 
 export class Viewer {
   protected camera: PerspectiveCamera;
@@ -13,6 +12,7 @@ export class Viewer {
   protected renderer: WebGLRenderer;
   protected scene = new Scene();
   protected stats = new Stats();
+  protected _needsUpdate = true;
   
   /**
    * Reference to the UI root in order to obtain bi-directional communication.
@@ -38,6 +38,7 @@ export class Viewer {
 
     // control setup
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.addEventListener('change', this.setToUpdate); // Make sure to re-render on control change
 
     // stats setup
     this.stats.showPanel(0); // display fps
@@ -68,7 +69,12 @@ export class Viewer {
   // don't call multiple times
   public render(): void {
     this.stats.begin();
-    this.renderer.render(this.scene, this.camera);
+
+    if (this._needsUpdate) {
+      this.renderer.render(this.scene, this.camera);
+      this._needsUpdate = false;
+    }
+
     this.stats.end();
     requestAnimationFrame(() => this.render());
   }
@@ -93,6 +99,13 @@ export class Viewer {
 
     // Make sure rotation is calculated correctly otherwise we will rotate the camera on the first user interaction.
     this.controls.update(); 
+
+    // Make sure we re-render
+    this._needsUpdate = true;
+  }
+
+  public setToUpdate = (): void => {
+    this._needsUpdate = true;
   }
 
   public selectPoint(event: MouseEvent) {
@@ -137,6 +150,8 @@ export class Viewer {
     this.measuringLine.geometry.computeBoundingBox();
 
     this.measuringLine.visible = true;
+
+    this._needsUpdate = true;
   }
 
   public setUiRoot(uiRoot: Root): void {
