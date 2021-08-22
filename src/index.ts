@@ -10,7 +10,7 @@ const viewer = new Viewer(
   document.getElementById('viewer') as HTMLCanvasElement
 );
 
-viewer.loadModelAndDisplay(SMALL_CLOUD_GLB);
+viewer.loadModelAndDisplay(BIG_CLOUD_GLB);
 viewer.render();
 
 ReactDOM.render(
