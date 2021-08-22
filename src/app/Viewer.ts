@@ -1,13 +1,15 @@
-import { WebGLRenderer, PerspectiveCamera, Scene, Vector3, Group, Box3, Raycaster } from 'three';
+import { WebGLRenderer, PerspectiveCamera, Scene, Vector3, Group, Box3, Raycaster, Intersection, Line, BufferGeometry, LineBasicMaterial, BufferAttribute } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import Stats from 'stats.js';
 import { convertDOMCoordinatesToNDC } from '../utils';
 import { Root } from '../ui/Root';
+import { isLine } from '../typeGuards';
 
 export class Viewer {
   protected camera: PerspectiveCamera;
   protected controls: OrbitControls;
+  protected measuringLine: Line;
   protected renderer: WebGLRenderer;
   protected scene = new Scene();
   protected stats = new Stats();
@@ -40,6 +42,17 @@ export class Viewer {
     // stats setup
     this.stats.showPanel(0); // display fps
     document.body.appendChild(this.stats.dom);
+
+    // measuring display setup
+    const lineGeom = new BufferGeometry();
+    lineGeom.setAttribute('position', new BufferAttribute(new Float32Array(6), 3));
+    const lineMaterial = new LineBasicMaterial({ color: 0x0000FF });
+    this.measuringLine = new Line(lineGeom, lineMaterial);
+    this.measuringLine.visible = false;
+    // Put the line on a separate layer so we don't get intersections with it from raycaster
+    this.measuringLine.layers.set(1);
+    this.camera.layers.enable(1); // and make sure the camera can still see it for rendering
+    this.scene.add(this.measuringLine);
 
     // listen for resize events
     window.addEventListener('resize', () => {
@@ -86,11 +99,15 @@ export class Viewer {
     const ndc = convertDOMCoordinatesToNDC(event),
       raycaster = new Raycaster();
 
+      raycaster.params.Points.threshold = 0.1; // use a lower distance threshold as the points are very close together
       raycaster.setFromCamera(ndc, this.camera);
 
       const intersections = raycaster.intersectObject(this.scene, true); // recurse
 
       if (intersections.length) {
+        // sort by how close the ray got to the point, we want the one the user tried to click on.
+        intersections.sort((a, b) => a.distanceToRay - b.distanceToRay);
+
         const selectedPoint = intersections[0];
         
         if (this.uiRoot) {
@@ -102,6 +119,24 @@ export class Viewer {
           this.uiRoot.setSelectedPoint(null);
         }
       }
+  }
+
+  public setMeasuringLineLocation(startPoint: Intersection, endPoint: Intersection): void {
+    if (!startPoint || !endPoint) {
+      this.measuringLine.visible = false;
+      return;
+    }
+
+    const linePosition = this.measuringLine.geometry.getAttribute('position');
+
+    linePosition.setXYZ(0, startPoint.point.x, startPoint.point.y, startPoint.point.z); // start
+    linePosition.setXYZ(1, endPoint.point.x, endPoint.point.y, endPoint.point.z); // end
+    linePosition.needsUpdate = true;
+    // recompute bounding geometries to prevent frustum culling
+    this.measuringLine.geometry.computeBoundingSphere();
+    this.measuringLine.geometry.computeBoundingBox();
+
+    this.measuringLine.visible = true;
   }
 
   public setUiRoot(uiRoot: Root): void {

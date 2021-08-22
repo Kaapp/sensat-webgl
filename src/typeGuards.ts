@@ -1,4 +1,4 @@
-import { BufferAttribute, InterleavedBufferAttribute, Object3D, Points } from "three";
+import { BufferAttribute, InterleavedBufferAttribute, Line, Object3D, Points } from "three";
 
 /**
  * Type guard to check if an Object3D is actually a Points instance.
@@ -7,6 +7,15 @@ import { BufferAttribute, InterleavedBufferAttribute, Object3D, Points } from "t
  */
 export const isPoints = (maybe: Object3D): maybe is Points => {
     return maybe !== null && (maybe as Points).isPoints;
+};
+
+/**
+ * Type guard to check if an Object3D is actually a Line instance.
+ * @param maybe The potential Line object
+ * @returns Whether or not the supplied value was a Line instance.
+ */
+ export const isLine = (maybe: Object3D): maybe is Line => {
+    return maybe !== null && (maybe as Line).isLine;
 };
 
 /**
