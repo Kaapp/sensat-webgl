@@ -1,9 +1,11 @@
-import { WebGLRenderer, PerspectiveCamera, Scene, Vector3, Group, Box3, Raycaster, Intersection, Line, BufferGeometry, LineBasicMaterial, BufferAttribute } from 'three';
+import { WebGLRenderer, PerspectiveCamera, Scene, Vector3, Group, Box3, Raycaster, Intersection, Line, BufferGeometry, LineBasicMaterial, BufferAttribute, Points, PointsMaterial } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils';
 import Stats from 'stats.js';
 import { convertDOMCoordinatesToNDC } from '../utils';
 import { Root } from '../ui/Root';
+import { isPoints } from '../typeGuards';
 
 export class Viewer {
   protected camera: PerspectiveCamera;
@@ -159,7 +161,23 @@ export class Viewer {
   }
 
   public async loadModelAndDisplay(url: string) {
-    const model = await this.loadGLTFAsync(url);
+    const model = await this.loadGLTFAsync(url),
+      modelObj = model.children[0]; // There's only one direct child of these particular models
+
+    const mergedPointClouds: Points[] = [],
+      BATCH_SIZE = 10; // example value, but the objective is just to reduce draw calls
+    for (let i = 0; i < modelObj.children.length; i += BATCH_SIZE) {
+      const pointsToMerge = modelObj.children.slice(i, i + BATCH_SIZE)
+        .map(point => isPoints(point) ? point.geometry : null);
+
+      const mergedGeoms = BufferGeometryUtils.mergeBufferGeometries(pointsToMerge),
+        mergedPointCloud = new Points(mergedGeoms, new PointsMaterial({ vertexColors: true, sizeAttenuation: false }));
+
+      mergedPointClouds.push(mergedPointCloud);
+    }
+
+    modelObj.children = mergedPointClouds;
+
     this.scene.add(model);
 
     // Ideally we know where the data was captured and could project lat/long to this coordinate system
