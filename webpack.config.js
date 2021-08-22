@@ -10,17 +10,22 @@ module.exports = {
     publicPath: '/dist'
   },
   resolve: {
-    extensions: ['.ts', '.js']
+    extensions: ['.tsx', '.ts', '.js']
   },
   module: {
     rules: [
       {
-        test: /\.ts$/,
+        test: /\.tsx?$/i,
         use: 'ts-loader',
         exclude: /node_modules/
       },
       {
-        test: /\.(glb|gltf)$/,
+        test: /\.css$/i,
+        use: ['style-loader', 'css-loader'],
+        exclude: /node_modules/
+      },
+      {
+        test: /\.(glb|gltf)$/i,
         exclude: /node_modules/,
         use:
         [

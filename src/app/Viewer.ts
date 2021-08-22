@@ -2,14 +2,20 @@ import { WebGLRenderer, PerspectiveCamera, Scene, Vector3, Group, Box3, Raycaste
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import Stats from 'stats.js';
-import { convertDOMCoordinatesToNDC } from './utils';
+import { convertDOMCoordinatesToNDC } from '../utils';
+import { Root } from '../ui/Root';
 
 export class Viewer {
-  camera: PerspectiveCamera;
-  controls: OrbitControls;
-  renderer: WebGLRenderer;
-  scene = new Scene();
-  stats = new Stats();
+  protected camera: PerspectiveCamera;
+  protected controls: OrbitControls;
+  protected renderer: WebGLRenderer;
+  protected scene = new Scene();
+  protected stats = new Stats();
+  
+  /**
+   * Reference to the UI root in order to obtain bi-directional communication.
+   */
+  protected uiRoot: Root;
 
   constructor(canvasElement: HTMLCanvasElement) {
     this.renderer = new WebGLRenderer({
@@ -43,11 +49,11 @@ export class Viewer {
     });
 
     // listen for click events
-    window.addEventListener('click', event => this.selectPoint(event));
+    canvasElement.addEventListener('click', event => this.selectPoint(event));
   }
 
   // don't call multiple times
-  render(): void {
+  public render(): void {
     this.stats.begin();
     this.renderer.render(this.scene, this.camera);
     this.stats.end();
@@ -55,7 +61,7 @@ export class Viewer {
   }
 
   // helper method for setting camera and controls
-  setCameraControls(options: {
+  public setCameraControls(options: {
     userPosition: Vector3;
     lookAtPoint: Vector3;
     far: number;
@@ -76,7 +82,7 @@ export class Viewer {
     this.controls.update(); 
   }
 
-  selectPoint(event: MouseEvent) {
+  public selectPoint(event: MouseEvent) {
     const ndc = convertDOMCoordinatesToNDC(event),
       raycaster = new Raycaster();
 
@@ -85,11 +91,24 @@ export class Viewer {
       const intersections = raycaster.intersectObject(this.scene, true); // recurse
 
       if (intersections.length) {
-        console.log(intersections);
+        const selectedPoint = intersections[0];
+        
+        if (this.uiRoot) {
+          this.uiRoot.setSelectedPoint(selectedPoint);
+        }
+      }
+      else {
+        if (this.uiRoot) {
+          this.uiRoot.setSelectedPoint(null);
+        }
       }
   }
 
-  async loadModelAndDisplay(url: string) {
+  public setUiRoot(uiRoot: Root): void {
+    this.uiRoot = uiRoot;
+  }
+
+  public async loadModelAndDisplay(url: string) {
     const model = await this.loadGLTFAsync(url);
     this.scene.add(model);
 
@@ -112,7 +131,7 @@ export class Viewer {
   }
 
   // boo callbacks, yay promises
-  async loadGLTFAsync(url: string): Promise<Group> {
+  public async loadGLTFAsync(url: string): Promise<Group> {
     return new Promise((resolve, reject) => {
       new GLTFLoader().load(
         url,

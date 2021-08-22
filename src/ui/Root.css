@@ -1,0 +1,14 @@
+#ui-root {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.ui-container {
+  background: #3f3f3f;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans",
+    "Droid Sans", "Helvetica Neue", sans-serif; 
+}
