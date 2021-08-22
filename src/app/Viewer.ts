@@ -1,14 +1,15 @@
-import {WebGLRenderer, PerspectiveCamera, Scene, Vector3, Group, Box3, AxesHelper} from 'three';
-import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
-import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
+import { WebGLRenderer, PerspectiveCamera, Scene, Vector3, Group, Box3, Raycaster } from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import Stats from 'stats.js';
+import { convertDOMCoordinatesToNDC } from './utils';
 
 export class Viewer {
-  stats = new Stats();
   camera: PerspectiveCamera;
   controls: OrbitControls;
   renderer: WebGLRenderer;
   scene = new Scene();
+  stats = new Stats();
 
   constructor(canvasElement: HTMLCanvasElement) {
     this.renderer = new WebGLRenderer({
@@ -76,7 +77,16 @@ export class Viewer {
   }
 
   selectPoint(event: MouseEvent) {
-    // TODO select point code can live here.
+    const ndc = convertDOMCoordinatesToNDC(event),
+      raycaster = new Raycaster();
+
+      raycaster.setFromCamera(ndc, this.camera);
+
+      const intersections = raycaster.intersectObject(this.scene, true); // recurse
+
+      if (intersections.length) {
+        console.log(intersections);
+      }
   }
 
   async loadModelAndDisplay(url: string) {
@@ -86,18 +96,18 @@ export class Viewer {
     // Ideally we know where the data was captured and could project lat/long to this coordinate system
     // but without that information we can start based on the model's bounding box
     const bbox = new Box3().setFromObject(model),
-        modelCenter = new Vector3(),
-        cameraDistanceZ = bbox.max.z - bbox.min.z,
-        cameraPosition = new Vector3();
+      modelCenter = new Vector3(),
+      cameraDistanceZ = bbox.max.z - bbox.min.z,
+      cameraPosition = new Vector3();
 
     bbox.getCenter(modelCenter);
     cameraPosition.copy(modelCenter);
     cameraPosition.z += cameraDistanceZ;
 
     this.setCameraControls({
-        userPosition: cameraPosition,
-        lookAtPoint: modelCenter,
-        far: 2 * cameraDistanceZ
+      userPosition: cameraPosition,
+      lookAtPoint: modelCenter,
+      far: 2 * cameraDistanceZ
     });
   }
 
